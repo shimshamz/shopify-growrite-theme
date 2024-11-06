@@ -4,14 +4,17 @@
 
   {%- render 'icon', icon: 'nav-triangle-borderless' -%}
 
+  {%- assign vat = 1.15 %}
+  {% assign cart_total_price = cart.total_price | times: vat %}
+
   {%- capture shipping_alert -%}
     {%- if settings.cart_show_free_shipping_threshold -%}
       {%- assign threshold_in_cents = settings.cart_free_shipping_threshold | times: 100 -%}
 
-      {%- if cart.total_price >= threshold_in_cents -%}
+      {%- if cart_total_price >= threshold_in_cents -%}
         <p class="alert alert--tight alert--center text--strong">{{ 'cart.general.free_shipping' | t }}</p>
       {%- else -%}
-        {%- capture remaining_amount -%}<span>{{ cart.total_price | minus: threshold_in_cents | abs | money }}</span>{%- endcapture -%}
+        {%- capture remaining_amount -%}<span>{{ cart_total_price | minus: threshold_in_cents | abs | money }}</span>{%- endcapture -%}
         <p class="alert alert--tight alert--center text--strong">{{ 'cart.general.free_shipping_remaining_html' | t: remaining_amount: remaining_amount }}</p>
       {%- endif -%}
     {%- endif -%}
@@ -98,22 +101,22 @@
                       {%- if line_item.final_price == 0 -%}
                         <span class="price price--highlight">{{ 'cart.general.free' | t }}</span>
                       {%- else -%}
-                        <span class="price price--highlight">{{ line_item.final_line_price | money }}</span>
+                        <span class="price price--highlight">{%- if line_item.taxable -%}{{ line_item.final_line_price | times: vat | money }}{%- else -%}{{ line_item.final_line_price | money }}{% endif %}</span>
                       {%- endif -%}
 
-                      <span class="price price--compare">{{ line_item.original_line_price | money }}</span>
+                      <span class="price price--compare">{%- if line_item.taxable -%}{{ line_item.original_line_price | times: vat | money }}{%- else -%}{{ line_item.original_line_price | money }}{% endif %}</span>
                     {%- elsif line_item.variant.compare_at_price > line_item.variant.price -%}
-                      <span class="price price--highlight">{{ line_item.final_line_price | money }}</span>
-                      <span class="price price--compare">{{ line_item.variant.compare_at_price | times: line_item.quantity | money }}</span>
+                      <span class="price price--highlight">{%- if line_item.taxable -%}{{ line_item.final_line_price | times: vat | money }}{%- else -%}{{ line_item.final_line_price | money }}{% endif %}</span>
+                      <span class="price price--compare">{%- if line_item.taxable -%}{{ line_item.variant.compare_at_price | times: vat | times: line_item.quantity | money }}{%- else -%}{{ line_item.variant.compare_at_price | times: line_item.quantity | money }}{% endif %}</span>
                     {%- else -%}
-                      <span class="price">{{ line_item.final_line_price | money }}</span>
+                      <span class="price">{%- if line_item.taxable -%}{{ line_item.final_line_price | times: vat | money }}{%- else -%}{{ line_item.final_line_price | money }}{% endif %}</span>
                     {%- endif -%}
                   </div>
 
                   {%- if line_item.unit_price_measurement -%}
                     <div class="mini-cart__price-info">
                       <div class="unit-price-measurement">
-                        <span class="unit-price-measurement__price">{{ line_item.unit_price | money }}</span>
+                        <span class="unit-price-measurement__price">{%- if line_item.taxable -%}{{ line_item.unit_price | times: vat | money }}{%- else -%}{{ line_item.unit_price | money }}{% endif %}</span>
                         <span class="unit-price-measurement__separator">/ </span>
 
                         {%- if line_item.unit_price_measurement.reference_value != 1 -%}
@@ -173,7 +176,7 @@
 
         <div class="mini-cart__recap-price-line">
           <span>{{ 'cart.general.total' | t }}</span>
-          <span>{{ cart.total_price | money_with_currency }}</span>
+          <span>{{ cart_total_price | money_with_currency }}</span>
         </div>
 
         {%- comment -%}To calculate the total discount, we take both into account the Shopify Script (for Plus merchants), but we also add the compare at price{%- endcomment -%}

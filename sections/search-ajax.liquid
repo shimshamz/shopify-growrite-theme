@@ -1,3 +1,5 @@
+{%- assign vat = 1.15 %}
+
 <section class="search-ajax" data-section-id="{{ section.id }}">
   {%- if search.results_count > 0 -%}
     {%- if search.types contains 'product' -%}
@@ -16,7 +18,7 @@
 
             <div class="search-bar__item-info">
               <p class="search-bar__item-title">{{ item.title | highlight: clean_terms }}</p>
-              <span class="search-bar__item-price">{{ item.price | money }}</span>
+              <span class="search-bar__item-price">{%- if item.selected_or_first_available_variant.taxable -%}{{ item.price | times: vat | money }}{%- else -%}{{ item.price | money }}{% endif %}</span>
             </div>
           </a>
         {%- endfor -%}

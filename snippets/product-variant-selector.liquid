@@ -1,5 +1,6 @@
 {%- assign selected_variant = product.selected_or_first_available_variant -%}
 {%- assign color_label = 'color,colour,couleur,cor,colore,farbe,색,色,カラー,färg,farve,szín,barva' | split: ',' -%}
+{%- assign vat = 1.15 %}
 
 {%- unless product.has_only_default_variant -%}
   <div class="product-form__variants" {{ block.shopify_attributes }}>
@@ -146,9 +147,9 @@
             <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
 
             {%- if settings.currency_code_enabled -%}
-              {{- selected_variant.price | money_with_currency -}}
+              {{- selected_variant.price | times: vat | money_with_currency -}}
             {%- else -%}
-              {{- selected_variant.price | money -}}
+              {{- selected_variant.price | times: vat | money -}}
             {%- endif -%}
           </span>
 
@@ -156,9 +157,9 @@
             <span class="visually-hidden">{{ 'product.general.regular_price' | t }}</span>
 
             {%- if settings.currency_code_enabled -%}
-              {{- selected_variant.compare_at_price | money_with_currency -}}
+              {%- if selected_variant.taxable -%}{{ selected_variant.compare_at_price | times: vat | money_with_currency }}{%- else -%}{{ selected_variant.compare_at_price | money_with_currency }}{% endif %}
             {%- else -%}
-              {{- selected_variant.compare_at_price | money -}}
+              {%- if selected_variant.taxable -%}{{ selected_variant.compare_at_price | times: vat | money }}{%- else -%}{{ selected_variant.compare_at_price | money }}{% endif %}
             {%- endif -%}
           </span>
         {%- else -%}
@@ -166,9 +167,9 @@
             <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
 
             {%- if settings.currency_code_enabled -%}
-              {{- selected_variant.price | money_with_currency -}}
+              {%- if selected_variant.taxable -%}{{ selected_variant.price | times: vat | money_with_currency }}{%- else -%}{{ selected_variant.price | money_with_currency }}{% endif %}
             {%- else -%}
-              {{- selected_variant.price | money -}}
+              {%- if selected_variant.taxable -%}{{ selected_variant.price | times: vat | money }}{%- else -%}{{ selected_variant.price | money }}{% endif %}
             {%- endif -%}
           </span>
         {%- endif -%}
@@ -176,7 +177,7 @@
 
       <div class="product-form__price-info" style="display: {% if selected_variant.unit_price_measurement %}block{% else %}none{% endif %}">
         <div class="unit-price-measurement">
-          <span class="unit-price-measurement__price">{{ selected_variant.unit_price | money }}</span>
+          <span class="unit-price-measurement__price">{%- if selected_variant.taxable -%}{{ selected_variant.unit_price | times: vat | money }}{%- else -%}{{ selected_variant.unit_price | money }}{% endif %}</span>
           <span class="unit-price-measurement__separator">/ </span>
 
           <span class="unit-price-measurement__reference-value" {%- if selected_variant.unit_price_measurement.reference_value == 1 -%}style="display: none"{% endif %}>
