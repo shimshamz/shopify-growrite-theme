@@ -4,6 +4,9 @@
 }
 {%- endcapture -%}
 
+{%- assign vat = 1.15 %}
+{% assign cart_total_price = cart.total_price | times: vat %}
+
 <section data-section-id="{{ section.id }}" data-section-type="cart" data-section-settings='{{ section_settings }}' data-item-count="{{ cart.item_count }}">
   {%- if cart.item_count == 0 -%}
     <div class="container">
@@ -16,7 +19,7 @@
 
         {%- if settings.cart_show_free_shipping_threshold -%}
           {%- assign threshold_in_cents = settings.cart_free_shipping_threshold | times: 100 -%}
-          {%- capture remaining_amount -%}<span>{{ cart.total_price | minus: threshold_in_cents | abs | money }}</span>{%- endcapture -%}
+          {%- capture remaining_amount -%}<span>{{ cart_total_price | minus: threshold_in_cents | abs | money }}</span>{%- endcapture -%}
           <p class="empty-state__description">{{ 'cart.general.free_shipping_remaining_html' | t: remaining_amount: remaining_amount }}</p>
         {%- endif -%}
 
@@ -33,10 +36,10 @@
         {%- if settings.cart_show_free_shipping_threshold -%}
           {%- assign threshold_in_cents = settings.cart_free_shipping_threshold | times: 100 -%}
 
-          {%- if cart.total_price >= threshold_in_cents -%}
+          {%- if cart_total_price >= threshold_in_cents -%}
             <p class="page__description">{{ 'cart.general.free_shipping' | t }}</p>
           {%- else -%}
-            {%- capture remaining_amount -%}<span>{{ cart.total_price | minus: threshold_in_cents | abs | money }}</span>{%- endcapture -%}
+            {%- capture remaining_amount -%}<span>{{ cart_total_price | minus: threshold_in_cents | abs | money }}</span>{%- endcapture -%}
             <p class="page__description">{{ 'cart.general.free_shipping_remaining_html' | t: remaining_amount: remaining_amount }}</p>
           {%- endif -%}
         {%- endif -%}
@@ -126,23 +129,23 @@
                                   {%- if line_item.final_price == 0 -%}
                                     <span class="line-item__price line-item__price--highlight">{{ 'cart.general.free' | t }}</span>
                                   {%- else -%}
-                                    <span class="line-item__price line-item__price--highlight">{{ line_item.final_price | money }}</span>
+                                    <span class="line-item__price line-item__price--highlight">{%- if line_item.taxable -%}{{ line_item.final_price | times: vat | money }}{%- else -%}{{ line_item.final_price | money }}{% endif %}</span>
                                   {%- endif -%}
 
-                                  <span class="line-item__price line-item__price--compare">{{ line_item.original_price | money }}</span>
+                                  <span class="line-item__price line-item__price--compare">{%- if line_item.taxable -%}{{ line_item.original_price | times: vat | money }}{%- else -%}{{ line_item.original_price | money }}{% endif %}</span>
                                 {%- elsif line_item.variant.compare_at_price > line_item.variant.price -%}
                                   {%- if line_item.final_price == 0 -%}
                                     <span class="line-item__price line-item__price--highlight">{{ 'cart.general.free' | t }}</span>
                                   {%- else -%}
-                                    <span class="line-item__price line-item__price--highlight">{{ line_item.final_price | money }}</span>
+                                    <span class="line-item__price line-item__price--highlight">{%- if line_item.taxable -%}{{ line_item.final_price | times: vat | money }}{%- else -%}{{ line_item.final_price | money }}{% endif %}</span>
                                   {%- endif -%}
 
-                                  <span class="line-item__price line-item__price--compare">{{ line_item.variant.compare_at_price | money }}</span>
+                                  <span class="line-item__price line-item__price--compare">{%- if line_item.taxable -%}{{ line_item.variant.compare_at_price | times: vat | money }}{%- else -%}{{ line_item.variant.compare_at_price | money }}{% endif %}</span>
                                 {%- else -%}
                                   {%- if line_item.final_price == 0 -%}
                                     <span class="line-item__price">{{ 'cart.general.free' | t }}</span>
                                   {%- else -%}
-                                    <span class="line-item__price">{{ line_item.final_price | money }}</span>
+                                    <span class="line-item__price">{%- if line_item.taxable -%}{{ line_item.final_price | times: vat | money }}{%- else -%}{{ line_item.final_price | money }}{% endif %}</span>
                                   {%- endif -%}
                                 {%- endif -%}
                               </div>
@@ -150,7 +153,7 @@
                               {%- if line_item.unit_price_measurement -%}
                                 <div class="line-item__price-info">
                                   <div class="unit-price-measurement">
-                                    <span class="unit-price-measurement__price">{{ line_item.unit_price | money }}</span>
+                                    <span class="unit-price-measurement__price">{%- if line_item.taxable -%}{{ line_item.unit_price | times: vat | money }}{%- else -%}{{ line_item.unit_price | money }}{% endif %}</span>
                                     <span class="unit-price-measurement__separator">/ </span>
 
                                     {%- if line_item.unit_price_measurement.reference_value != 1 -%}
@@ -223,7 +226,7 @@
                           {%- if line_item.final_line_price == 0 -%}
                             {{- 'cart.general.free' | t -}}
                           {%- else -%}
-                            <span>{{ line_item.final_line_price | money }}</span>
+                            <span>{%- if line_item.taxable -%}{{ line_item.final_line_price | times: vat | money }}{%- else -%}{{ line_item.final_line_price | money }}{% endif %}</span>
                           {%- endif -%}
                         </td>
                       </tr>
@@ -265,7 +268,7 @@
                         {%- if gift_wrap_product.price == 0 -%}
                           <span>{{ 'cart.general.free' | t }}</span>
                         {%- else -%}
-                          {%- capture gift_wrap_product_price -%}<span>{{ gift_wrap_product.price | money }}</span>{%- endcapture -%}
+                          {%- capture gift_wrap_product_price -%}<span>{%- if gift_wrap_product.selected_or_first_available_variant.taxable -%}{{ gift_wrap_product.price | times: vat | money }}{%- else -%}{{ gift_wrap_product.price | money }}{% endif %}</span>{%- endcapture -%}
                           <span>{{ 'cart.gift_wrap.price_html' | t: price: gift_wrap_product_price }}</span>
                         {%- endif -%}
                       </p>
@@ -364,7 +367,7 @@
 
                     <div class="cart-recap__price-line text--pull">
                       <span class="cart-recap__price-line-label">{{ 'cart.general.total' | t }}</span>
-                      <span class="cart-recap__price-line-price">{{ cart.total_price | money_with_currency }}</span>
+                      <span class="cart-recap__price-line-price">{{ cart_total_price | money_with_currency }}</span>
                     </div>
 
                     {%- comment -%}
