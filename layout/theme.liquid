@@ -155,5 +155,9 @@
     <ul hidden>
       <li id="a11y-new-window-message">{{ 'general.accessibility.new_window' | t }}</li>
     </ul>
+
+    {%- if request.page_type == 'collection' or request.page_type == 'product' -%}
+      {% render 'grow-rite-request-quote-modal' %}
+    {%- endif -%}
   </body>
 </html>
