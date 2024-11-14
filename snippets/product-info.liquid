@@ -94,6 +94,118 @@
 
   {%- assign variant_selector_block = section.blocks | where: 'type', 'variant_selector' | first -%}
 
+  {% assign productJSON = product | json %}
+
+  <script type="application/json">
+    {%- capture variantsJSON -%}
+      {%- for variant in product.variants -%}
+        {
+          "available": {{ variant.available | json }},
+          "barcode": {{ variant.barcode | json }},
+          "compare_at_price": {%- if variant.taxable -%}{{ variant.compare_at_price | times: 1.15 | json }}{%- else -%}{{ variant.compare_at_price | json }}{% endif %},
+          "featured_image": {{ variant.featured_image | json }},
+          "featured_media": {{ variant.featured_media | json }},
+          "id": {{ variant.id | json }},
+          "inventory_management": {{ variant.inventory_management | json }},
+          "name": {{ variant.name | json }},
+          "option1": {{ variant.option1 | json }},
+          "option2": {{ variant.option2 | json }},
+          "option3": {{ variant.option3 | json }},
+          "options": {{ variant.options | json }},
+          "price": {%- if variant.taxable -%}{{ variant.price | times: 1.15 | json }}{%- else -%}{{ variant.price | json }}{% endif %},
+          "public_title": {{ variant.public_title | json }},
+          "requires_shipping": {{ variant.requires_shipping | json }},
+          "sku": {{ variant.sku | json }},
+          "taxable": {{ variant.taxable | json }},
+          "title": {{ variant.title | json }}
+        }{%- unless forloop.last -%},{%- endunless -%}
+      {%- endfor -%}
+    {%- endcapture -%}
+  </script>
+  
+  <script type="application/json">
+    {%- capture productJSON -%}
+      {
+        "id": {{ product.id | json }},
+        "title": {{ product.title | json }},
+        "handle": {{ product.handle | json }},
+        "description": {{ product.description | json }},
+        "published_at": "{{ product.published_at  }}",
+        "created_at": "{{ product.created_at }}",
+        "vendor": {{ product.vendor | json }},
+        "type": {{ product.type | json }},
+        "tags": {{ product.tags | json }},
+        "price": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price | times: 1.15 | json }}{%- else -%}{{ product.price | json }}{% endif %},
+        "price_min": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price_min | times: 1.15 | json }}{%- else -%}{{ product.price_min | json }}{% endif %},
+        "price_max": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price_max | times: 1.15 | json }}{%- else -%}{{ product.price_max | json }}{% endif %},
+        "available": {{ product.available | json }},
+        "price_varies": {{ product.price_varies | json }},
+        "compare_at_price": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price | times: 1.15 | json }}{%- else -%}{{ product.compare_at_price | json }}{% endif %},
+        "compare_at_price_min": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price_min | times: 1.15 | json }}{%- else -%}{{ product.compare_at_price_min | json }}{% endif %},
+        "compare_at_price_max": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price_max | times: 1.15 | json }}{%- else -%}{{ product.compare_at_price_max | json }}{% endif %},
+        "compare_at_price_varies": {{ product.compare_at_price_varies | json }},
+        "variants": [{{ variantsJSON }}],
+        "images": {{ product.images | json }},
+        "featured_image": {{ product.featured_image | json }},
+        "options": {{ product.options | json }},
+        "media": {{ product.media | json }},
+        "content": {{ product.content | json }}
+      }
+    {% endcapture %}
+  </script>
+
+  <script type="application/json" data-product-json>
+    {
+      "product": {{ productJSON }},
+      "template": {{ product.template_suffix | json }},
+      "options_with_values": {{ product.options_with_values | json }},
+      "selected_variant_id": {{ selected_variant.id }}
+      {%- if variant_selector_block.settings.show_inventory_quantity -%}
+        ,"inventories": {
+          {%- for variant in product.variants -%}
+            {%- if variant.inventory_management -%}
+              {%- if variant.available and variant.inventory_management -%}
+                {%- if variant.inventory_quantity <= 0 and variant.requires_shipping -%}
+                  {%- if variant.incoming -%}
+                    {%- capture next_incoming_date -%}{{ variant.next_incoming_date | date: format: 'date' }}{%- endcapture -%}
+                    {%- capture inventory_message -%}{{ 'product.form.incoming_stock' | t: next_incoming_date: next_incoming_date }}{%- endcapture -%}
+                  {%- else -%}
+                    {%- capture inventory_message -%}{{ 'product.form.oversell_stock' | t }}{%- endcapture -%}
+                  {%- endif -%}
+                {%- elsif variant_selector_block.settings.low_inventory_threshold > 0 -%}
+                  {%- if variant.inventory_quantity <= variant_selector_block.settings.low_inventory_threshold -%}
+                    {%- capture inventory_message -%}{{ 'product.form.low_stock_with_quantity_count' | t: count: variant.inventory_quantity }}{%- endcapture -%}
+                  {%- else -%}
+                    {%- capture inventory_message -%}{{ 'product.form.in_stock_with_quantity_count' | t: count: variant.inventory_quantity }}{%- endcapture -%}
+                  {%- endif -%}
+                {%- else -%}
+                  {%- capture inventory_message -%}{{ 'product.form.in_stock' | t }}{%- endcapture -%}
+                {%- endif -%}
+              {%- else -%}
+                {%- if variant.incoming -%}
+                  {%- capture next_incoming_date -%}{{ variant.next_incoming_date | date: format: 'date' }}{%- endcapture -%}
+                  {%- capture inventory_message -%}{{ 'product.form.incoming_stock' | t: next_incoming_date: next_incoming_date }}{%- endcapture -%}
+                {%- else -%}
+                  {%- capture inventory_message -%}{{ 'product.form.sold_out' | t }}{%- endcapture -%}
+                {%- endif -%}
+              {%- endif -%} 
+            {%- else -%}
+              {%- capture inventory_message -%}{{ 'product.form.in_stock' | t }}{%- endcapture -%}
+            {%- endif -%}
+
+            "{{ variant.id }}": {
+              "inventory_management": {{ variant.inventory_management | json }},
+              "inventory_policy": {{ variant.inventory_policy | json }},
+              "inventory_quantity": {{ variant.inventory_quantity | json }},
+              "inventory_message": {{ inventory_message | json }}
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        }
+      {%- endif -%}
+    }
+  </script>
+
+  {%- comment -%}
   <script type="application/json" data-product-json>
     {
       "product": {{ product | json }},
@@ -144,4 +256,5 @@
       {%- endif -%}
     }
   </script>
+  {%- endcomment -%}
 </div>
