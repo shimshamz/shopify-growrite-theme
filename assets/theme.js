@@ -3486,27 +3486,39 @@
         }
 
         if (!newVariant) {
-          addToCartButtonElement.setAttribute('disabled', 'disabled');
-          addToCartButtonElement.classList.add('button--disabled');
-          addToCartButtonElement.classList.remove('button--primary');
+          // addToCartButtonElement.setAttribute('disabled', 'disabled');
+          // addToCartButtonElement.classList.add('button--disabled');
+          // addToCartButtonElement.classList.remove('button--primary');
           addToCartButtonElement.removeAttribute('data-action');
-          addToCartButtonElement.innerHTML = window.languages.productFormUnavailable;
+          // addToCartButtonElement.innerHTML = window.languages.productFormUnavailable;
           infoListElement.style.display = 'none';
+
+          addToCartButtonElement.removeAttribute('disabled');
+          addToCartButtonElement.classList.remove('button--disabled');
+          addToCartButtonElement.classList.add('button--primary', 'request-quote-button');
+          addToCartButtonElement.innerHTML = 'Request a Quote';
         } else {
-          infoListElement.style.display = 'block';
+          // infoListElement.style.display = 'block';
 
           if (newVariant['available']) {
+            infoListElement.style.display = 'block';
             addToCartButtonElement.removeAttribute('disabled');
             addToCartButtonElement.classList.remove('button--disabled');
             addToCartButtonElement.classList.add('button--primary');
             addToCartButtonElement.setAttribute('data-action', 'add-to-cart');
             addToCartButtonElement.innerHTML = this.productTemplate === 'pre-order' ? window.languages.productFormPreOrder : window.languages.productFormAddToCart;
           } else {
-            addToCartButtonElement.setAttribute('disabled', 'disabled');
-            addToCartButtonElement.classList.add('button--disabled');
-            addToCartButtonElement.classList.remove('button--primary');
+            infoListElement.style.display = 'none';
+            // addToCartButtonElement.setAttribute('disabled', 'disabled');
+            // addToCartButtonElement.classList.add('button--disabled');
+            // addToCartButtonElement.classList.remove('button--primary');
             addToCartButtonElement.removeAttribute('data-action');
-            addToCartButtonElement.innerHTML = window.languages.productFormSoldOut;
+            // addToCartButtonElement.innerHTML = window.languages.productFormSoldOut;
+
+            addToCartButtonElement.removeAttribute('disabled');
+            addToCartButtonElement.classList.remove('button--disabled');
+            addToCartButtonElement.classList.add('button--primary', 'request-quote-button');
+            addToCartButtonElement.innerHTML = 'Request a Quote';
           }
         } // We handle the smart payment button
 
