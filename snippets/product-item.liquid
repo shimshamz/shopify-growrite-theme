@@ -54,18 +54,37 @@
   {%- if product.media.size > 0 -%}
     {%- assign primary_media = product.featured_media -%}
 
-    <a href="{{ product.url }}" class="product-item__image-wrapper {% if show_secondary_media %}product-item__image-wrapper--with-secondary{% endif %}">
+    <a
+      href="{{ product.url }}"
+      class="product-item__image-wrapper {% if show_secondary_media %}product-item__image-wrapper--with-secondary{% endif %}"
+    >
       {%- capture supported_sizes -%}{%- render 'image-size', sizes: '200,300,400,500,600,700,800', image: primary_media.preview_image -%}{%- endcapture -%}
       {%- assign image_url = primary_media | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
 
-      <div class="aspect-ratio {% if settings.product_image_size != 'natural' %}aspect-ratio--{{ settings.product_image_size }}{% endif %}" style="padding-bottom: {{ 100.0 | divided_by: primary_media.preview_image.aspect_ratio }}%">
-        <img class="product-item__primary-image lazyload image--fade-in" data-media-id="{{ primary_media.id }}" data-src="{{ image_url }}" data-sizes="auto" data-widths="[{{ supported_sizes }}]" alt="{{ primary_media.alt | escape }}">
+      <div
+        class="aspect-ratio {% if settings.product_image_size != 'natural' %}aspect-ratio--{{ settings.product_image_size }}{% endif %}"
+        style="padding-bottom: {{ 100.0 | divided_by: primary_media.preview_image.aspect_ratio }}%"
+      >
+        <img
+          class="product-item__primary-image lazyload image--fade-in"
+          data-media-id="{{ primary_media.id }}"
+          data-src="{{ image_url }}"
+          data-sizes="auto"
+          data-widths="[{{ supported_sizes }}]"
+          alt="{{ primary_media.alt | escape }}"
+        >
 
         {%- if show_secondary_media -%}
           {%- capture supported_sizes -%}{%- render 'image-size', sizes: '200,300,400,500,600,700,800', image: product.media[1].preview_image -%}{%- endcapture -%}
           {%- assign image_url = product.media[1] | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
 
-          <img class="product-item__secondary-image lazyload image--fade-in" data-src="{{ image_url }}" data-sizes="auto" data-widths="[{{ supported_sizes }}]" alt="{{ product.media[1].alt | escape }}">
+          <img
+            class="product-item__secondary-image lazyload image--fade-in"
+            data-src="{{ image_url }}"
+            data-sizes="auto"
+            data-widths="[{{ supported_sizes }}]"
+            alt="{{ product.media[1].alt | escape }}"
+          >
         {%- endif -%}
 
         <noscript>
@@ -78,9 +97,54 @@
   <div class="product-item__info">
     <div class="product-item__info-inner">
       {%- capture price_list -%}
-        <div class="product-item__price-list price-list">
-          {%- if product.price < product.compare_at_price -%}
-            {%- if product.price_varies -%}
+        {%- comment -%} if no variants available, don't display price {%- endcomment -%}
+        {%- if product.available -%}
+          <div class="product-item__price-list price-list">
+            {%- if product.price < product.compare_at_price -%}
+              {%- if product.price_varies -%}
+                {%- if settings.currency_code_enabled -%}
+                  {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_min -%}{{ product.price_min | times: vat | money_with_currency }}{%- endcapture -%}{%- else -%}{%- capture price_min -%}{{ product.price_min | money_with_currency }}{%- endcapture -%}{% endif %}
+                  {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_max -%}{{ product.price_max | times: vat | money_with_currency }}{%- endcapture -%}{%- else -%}{%- capture price_max -%}{{ product.price_max | money_with_currency }}{%- endcapture -%}{% endif %}
+                {%- else -%}
+                  {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_min -%}{{ product.price_min | times: vat | money }}{%- endcapture -%}{%- else -%}{%- capture price_min -%}{{ product.price_min | money }}{%- endcapture -%}{% endif %}
+                  {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_max -%}{{ product.price_max | times: vat | money }}{%- endcapture -%}{%- else -%}{%- capture price_max -%}{{ product.price_max | money }}{%- endcapture -%}{% endif %}
+                {%- endif -%}
+  
+                <span class="price price--highlight">
+                  <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
+                  {{- 'collection.product.from_price_html' | t: price_min: price_min, price_max: price_max -}}
+                </span>
+  
+                <span class="price price--compare">
+                  <span class="visually-hidden">{{ 'product.general.regular_price' | t }}</span>
+  
+                  {%- if settings.currency_code_enabled -%}
+                    {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price_min | times: vat | money_with_currency }}{%- else -%}{{ product.compare_at_price_min | money_with_currency }}{% endif %}
+                  {%- else -%}
+                    {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price_min | times: vat | money }}{%- else -%}{{ product.compare_at_price_min | money }}{% endif %}
+                  {%- endif -%}
+                </span>
+              {%- else -%}
+                <span class="price price--highlight">
+                  <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
+  
+                  {%- if settings.currency_code_enabled -%}
+                    {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price | times: vat | money_with_currency }}{%- else -%}{{ product.price | money_with_currency }}{% endif %}
+                  {%- else -%}
+                    {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price | times: vat | money }}{%- else -%}{{ product.price | money }}{% endif %}
+                  {%- endif -%}
+                </span>
+  
+                <span class="price price--compare">
+                  <span class="visually-hidden">{{ 'product.general.regular_price' | t }}</span>
+                  {%- if settings.currency_code_enabled -%}
+                    {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price | times: vat | money_with_currency }}{%- else -%}{{ product.compare_at_price | money_with_currency }}{% endif %}
+                  {%- else -%}
+                    {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price | times: vat | money }}{%- else -%}{{ product.compare_at_price | money }}{% endif %}
+                  {%- endif -%}
+                </span>
+              {%- endif -%}
+            {%- elsif product.price_varies -%}
               {%- if settings.currency_code_enabled -%}
                 {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_min -%}{{ product.price_min | times: vat | money_with_currency }}{%- endcapture -%}{%- else -%}{%- capture price_min -%}{{ product.price_min | money_with_currency }}{%- endcapture -%}{% endif %}
                 {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_max -%}{{ product.price_max | times: vat | money_with_currency }}{%- endcapture -%}{%- else -%}{%- capture price_max -%}{{ product.price_max | money_with_currency }}{%- endcapture -%}{% endif %}
@@ -88,79 +152,37 @@
                 {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_min -%}{{ product.price_min | times: vat | money }}{%- endcapture -%}{%- else -%}{%- capture price_min -%}{{ product.price_min | money }}{%- endcapture -%}{% endif %}
                 {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_max -%}{{ product.price_max | times: vat | money }}{%- endcapture -%}{%- else -%}{%- capture price_max -%}{{ product.price_max | money }}{%- endcapture -%}{% endif %}
               {%- endif -%}
-
-              <span class="price price--highlight">
+  
+              <span class="price">
                 <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
                 {{- 'collection.product.from_price_html' | t: price_min: price_min, price_max: price_max -}}
               </span>
-
-              <span class="price price--compare">
-                <span class="visually-hidden">{{ 'product.general.regular_price' | t }}</span>
-
-                {%- if settings.currency_code_enabled -%}
-                  {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price_min | times: vat | money_with_currency }}{%- else -%}{{ product.compare_at_price_min | money_with_currency }}{% endif %}
-                {%- else -%}
-                  {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price_min | times: vat | money }}{%- else -%}{{ product.compare_at_price_min | money }}{% endif %}
-                {%- endif -%}
-              </span>
             {%- else -%}
-              <span class="price price--highlight">
+              <span class="price">
                 <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
-
                 {%- if settings.currency_code_enabled -%}
                   {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price | times: vat | money_with_currency }}{%- else -%}{{ product.price | money_with_currency }}{% endif %}
                 {%- else -%}
                   {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price | times: vat | money }}{%- else -%}{{ product.price | money }}{% endif %}
                 {%- endif -%}
               </span>
-
-              <span class="price price--compare">
-                <span class="visually-hidden">{{ 'product.general.regular_price' | t }}</span>
-                {%- if settings.currency_code_enabled -%}
-                  {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price | times: vat | money_with_currency }}{%- else -%}{{ product.compare_at_price | money_with_currency }}{% endif %}
-                {%- else -%}
-                  {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price | times: vat | money }}{%- else -%}{{ product.compare_at_price | money }}{% endif %}
-                {%- endif -%}
-              </span>
             {%- endif -%}
-          {%- elsif product.price_varies -%}
-            {%- if settings.currency_code_enabled -%}
-              {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_min -%}{{ product.price_min | times: vat | money_with_currency }}{%- endcapture -%}{%- else -%}{%- capture price_min -%}{{ product.price_min | money_with_currency }}{%- endcapture -%}{% endif %}
-              {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_max -%}{{ product.price_max | times: vat | money_with_currency }}{%- endcapture -%}{%- else -%}{%- capture price_max -%}{{ product.price_max | money_with_currency }}{%- endcapture -%}{% endif %}
-            {%- else -%}
-              {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_min -%}{{ product.price_min | times: vat | money }}{%- endcapture -%}{%- else -%}{%- capture price_min -%}{{ product.price_min | money }}{%- endcapture -%}{% endif %}
-              {%- if product.selected_or_first_available_variant.taxable -%}{%- capture price_max -%}{{ product.price_max | times: vat | money }}{%- endcapture -%}{%- else -%}{%- capture price_max -%}{{ product.price_max | money }}{%- endcapture -%}{% endif %}
-            {%- endif -%}
-
-            <span class="price">
-              <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
-              {{- 'collection.product.from_price_html' | t: price_min: price_min, price_max: price_max -}}
-            </span>
-          {%- else -%}
-            <span class="price">
-              <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
-              {%- if settings.currency_code_enabled -%}
-                {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price | times: vat | money_with_currency }}{%- else -%}{{ product.price | money_with_currency }}{% endif %}
-              {%- else -%}
-                {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price | times: vat | money }}{%- else -%}{{ product.price | money }}{% endif %}
-              {%- endif -%}
-            </span>
-          {%- endif -%}
-        </div>
-
-        {%- if product.selected_or_first_available_variant.unit_price_measurement -%}
-          <div class="product-item__price-info">
-            <div class="unit-price-measurement">
-              <span class="unit-price-measurement__price">{%- if product.selected_or_first_available_variant.taxable -%}{{ product.selected_or_first_available_variant.unit_price | times: vat | money }}{%- else -%}{{ product.selected_or_first_available_variant.unit_price | money }}{% endif %}</span>
-              <span class="unit-price-measurement__separator">/ </span>
-
-              {%- if product.selected_or_first_available_variant.unit_price_measurement.reference_value != 1 -%}
-                <span class="unit-price-measurement__reference-value">{{ product.selected_or_first_available_variant.unit_price_measurement.reference_value }}</span>
-              {%- endif -%}
-
-              <span class="unit-price-measurement__reference-unit">{{ product.selected_or_first_available_variant.unit_price_measurement.reference_unit }}</span>
-            </div>
           </div>
+  
+          {%- if product.selected_or_first_available_variant.unit_price_measurement -%}
+            <div class="product-item__price-info">
+              <div class="unit-price-measurement">
+                <span class="unit-price-measurement__price">{%- if product.selected_or_first_available_variant.taxable -%}{{ product.selected_or_first_available_variant.unit_price | times: vat | money }}{%- else -%}{{ product.selected_or_first_available_variant.unit_price | money }}{% endif %}</span>
+                <span class="unit-price-measurement__separator">/ </span>
+  
+                {%- if product.selected_or_first_available_variant.unit_price_measurement.reference_value != 1 -%}
+                  <span class="unit-price-measurement__reference-value">{{ product.selected_or_first_available_variant.unit_price_measurement.reference_value }}</span>
+                {%- endif -%}
+  
+                <span class="unit-price-measurement__reference-unit">{{ product.selected_or_first_available_variant.unit_price_measurement.reference_unit }}</span>
+              </div>
+            </div>
+          {%- endif -%}
         {%- endif -%}
       {%- endcapture -%}
 
@@ -185,7 +207,9 @@
         {{ vendor }}
       {%- endif -%}
 
-      <a href="{{ filtered_variant.url | default: product.url }}" class="product-item__title text--strong link">{{ product.title }}</a>
+      <a href="{{ filtered_variant.url | default: product.url }}" class="product-item__title text--strong link">
+        {{- product.title -}}
+      </a>
 
       {%- if settings.product_price_position == 'before_title' -%}
         {{ vendor }}
@@ -251,7 +275,10 @@
         </a>
       {%- endif -%}
 
-      {%- if settings.show_inventory_quantity and product.variants.first.inventory_management != blank and product.template_suffix != 'pre-order' -%}
+      {%- if settings.show_inventory_quantity
+        and product.variants.first.inventory_management != blank
+        and product.template_suffix != 'pre-order'
+      -%}
         {%- if product.available -%}
           {%- assign should_calculate_inventory = true -%}
 
@@ -277,15 +304,26 @@
             {%- endfor -%}
 
             {%- if all_inventory <= settings.low_inventory_threshold -%}
-              <span class="product-item__inventory inventory inventory--low">{{ 'collection.product.low_stock_with_quantity_count' | t: count: all_inventory }}</span>
+              <span class="product-item__inventory inventory inventory--low">
+                {{- 'collection.product.low_stock_with_quantity_count' | t: count: all_inventory -}}
+              </span>
             {%- else -%}
-              <span class="product-item__inventory inventory inventory--high">{{ 'collection.product.in_stock_with_quantity_count' | t: count: all_inventory }}</span>
+              <span class="product-item__inventory inventory inventory--high">
+                {{- 'collection.product.in_stock_with_quantity_count' | t: count: all_inventory -}}
+              </span>
             {%- endif -%}
           {%- else -%}
-            {%- if product.variants.first.inventory_policy == 'continue' and product.variants.first.inventory_quantity <= 0 and product.variants.first.requires_shipping -%}
-              <span class="product-item__inventory inventory inventory--high">{{ 'collection.product.oversell_stock' | t }}</span>
+            {%- if product.variants.first.inventory_policy == 'continue'
+              and product.variants.first.inventory_quantity <= 0
+              and product.variants.first.requires_shipping
+            -%}
+              <span class="product-item__inventory inventory inventory--high">
+                {{- 'collection.product.oversell_stock' | t -}}
+              </span>
             {%- else -%}
-              <span class="product-item__inventory inventory inventory--high">{{ 'collection.product.in_stock' | t }}</span>
+              <span class="product-item__inventory inventory inventory--high">
+                {{- 'collection.product.in_stock' | t -}}
+              </span>
             {%- endif -%}
           {%- endif -%}
         {%- else -%}
@@ -295,7 +333,10 @@
     </div>
 
     {%- if request.page_type == 'collection' or request.page_type == 'search' or show_add_to_cart -%}
-      {%- if section.settings.show_quick_view == 'list_grid' or section.settings.show_quick_buy == 'list_grid' or show_add_to_cart -%}
+      {%- if section.settings.show_quick_view == 'list_grid'
+        or section.settings.show_quick_buy == 'list_grid'
+        or show_add_to_cart
+      -%}
         {%- assign product_form_classes = 'product-item__action-list button-stack' -%}
       {%- else -%}
         {%- assign product_form_classes = 'product-item__action-list product-item__action-list--list-view-only button-stack' -%}
@@ -338,7 +379,17 @@
                 <a href="{{ product.url }}" class="{{ quick_buy_classes }}">{{ 'collection.product.choose_options' | t }}</a>
               {%- endif -%}
             {%- else -%}
+              {% comment %}
+              Hide Sold Out button
               <button class="{{ quick_buy_classes | replace: 'button--primary', 'button--disabled' }}" disabled>{{ 'collection.product.sold_out' | t }}</button>
+              {% endcomment %}
+              <button
+                class="product-item__action-button button button--small button--primary request-quote-button"
+                data-action="open-request-quote-modal"
+                data-product-title="{{ product.title }}"
+              >
+                {{ 'Request a Quote' }}
+              </button>
             {%- endif -%}
 
             {%- if section.settings.show_quick_view == 'list_grid' -%}
@@ -359,7 +410,7 @@
   </div>
 
   {%- comment -%}
-  The complementary product has an exception, where the form is shown outside
+    The complementary product has an exception, where the form is shown outside
   {%- endcomment -%}
 
   {%- if complementary_products and show_add_to_cart -%}
