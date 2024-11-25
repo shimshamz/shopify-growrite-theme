@@ -3486,17 +3486,26 @@
         }
 
         if (!newVariant) {
-          // addToCartButtonElement.setAttribute('disabled', 'disabled');
-          // addToCartButtonElement.classList.add('button--disabled');
-          // addToCartButtonElement.classList.remove('button--primary');
-          addToCartButtonElement.removeAttribute('data-action');
-          // addToCartButtonElement.innerHTML = window.languages.productFormUnavailable;
-          infoListElement.style.display = 'none';
-
-          addToCartButtonElement.removeAttribute('disabled');
-          addToCartButtonElement.classList.remove('button--disabled');
-          addToCartButtonElement.classList.add('button--primary', 'request-quote-button');
-          addToCartButtonElement.innerHTML = 'Request a Quote';
+          if (this.productTemplate === 'request-quote') {
+            // addToCartButtonElement.setAttribute('disabled', 'disabled');
+            // addToCartButtonElement.classList.add('button--disabled');
+            // addToCartButtonElement.classList.remove('button--primary');
+            addToCartButtonElement.removeAttribute('data-action');
+            // addToCartButtonElement.innerHTML = window.languages.productFormUnavailable;
+            infoListElement.style.display = 'none';
+  
+            addToCartButtonElement.removeAttribute('disabled');
+            addToCartButtonElement.classList.remove('button--disabled');
+            addToCartButtonElement.classList.add('button--primary', 'request-quote-button');
+            addToCartButtonElement.innerHTML = 'Request a Quote';
+          } else {
+            addToCartButtonElement.setAttribute('disabled', 'disabled');
+            addToCartButtonElement.classList.add('button--disabled');
+            addToCartButtonElement.classList.remove('button--primary');
+            addToCartButtonElement.removeAttribute('data-action');
+            addToCartButtonElement.innerHTML = window.languages.productFormUnavailable;
+            infoListElement.style.display = 'none';
+          }
         } else {
           // infoListElement.style.display = 'block';
 
@@ -3509,16 +3518,24 @@
             addToCartButtonElement.innerHTML = this.productTemplate === 'pre-order' ? window.languages.productFormPreOrder : window.languages.productFormAddToCart;
           } else {
             infoListElement.style.display = 'none';
-            // addToCartButtonElement.setAttribute('disabled', 'disabled');
-            // addToCartButtonElement.classList.add('button--disabled');
-            // addToCartButtonElement.classList.remove('button--primary');
-            addToCartButtonElement.removeAttribute('data-action');
-            // addToCartButtonElement.innerHTML = window.languages.productFormSoldOut;
-
-            addToCartButtonElement.removeAttribute('disabled');
-            addToCartButtonElement.classList.remove('button--disabled');
-            addToCartButtonElement.classList.add('button--primary', 'request-quote-button');
-            addToCartButtonElement.innerHTML = 'Request a Quote';
+            if (this.productTemplate === 'request-quote') {
+              // addToCartButtonElement.setAttribute('disabled', 'disabled');
+              // addToCartButtonElement.classList.add('button--disabled');
+              // addToCartButtonElement.classList.remove('button--primary');
+              addToCartButtonElement.removeAttribute('data-action');
+              // addToCartButtonElement.innerHTML = window.languages.productFormSoldOut;
+  
+              addToCartButtonElement.removeAttribute('disabled');
+              addToCartButtonElement.classList.remove('button--disabled');
+              addToCartButtonElement.classList.add('button--primary', 'request-quote-button');
+              addToCartButtonElement.innerHTML = 'Request a Quote';
+            } else {
+              addToCartButtonElement.setAttribute('disabled', 'disabled');
+              addToCartButtonElement.classList.add('button--disabled');
+              addToCartButtonElement.classList.remove('button--primary');
+              addToCartButtonElement.removeAttribute('data-action');
+              addToCartButtonElement.innerHTML = window.languages.productFormSoldOut;
+            }
           }
         } // We handle the smart payment button
 

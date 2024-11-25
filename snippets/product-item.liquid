@@ -379,17 +379,18 @@
                 <a href="{{ product.url }}" class="{{ quick_buy_classes }}">{{ 'collection.product.choose_options' | t }}</a>
               {%- endif -%}
             {%- else -%}
-              {% comment %}
-              Hide Sold Out button
-              <button class="{{ quick_buy_classes | replace: 'button--primary', 'button--disabled' }}" disabled>{{ 'collection.product.sold_out' | t }}</button>
-              {% endcomment %}
-              <button
-                class="product-item__action-button button button--small button--primary request-quote-button"
-                data-action="open-request-quote-modal"
-                data-product-title="{{ product.title }}"
-              >
-                {{ 'Request a Quote' }}
-              </button>
+              {%- comment -%} Show Request a Quote button only for products that have request-quote template assigned {%- endcomment -%}
+              {%- if product.template_suffix == 'request-quote' -%}
+                <button
+                  class="product-item__action-button button button--small button--primary request-quote-button"
+                  data-action="open-request-quote-modal"
+                  data-product-title="{{ product.title }}"
+                >
+                  {{ 'Request a Quote' }}
+                </button>
+              {%- else -%}
+                <button class="{{ quick_buy_classes | replace: 'button--primary', 'button--disabled' }}" disabled>{{ 'collection.product.sold_out' | t }}</button>
+              {%- endif -%}
             {%- endif -%}
 
             {%- if section.settings.show_quick_view == 'list_grid' -%}
