@@ -25,7 +25,7 @@
       {%- endif -%}
     {%- endif -%}
 
-    {%- if block.settings.show_payment_button and product.template_suffix != 'pre-order' -%}
+    {%- if block.settings.show_payment_button and product.template_suffix != 'pre-order' and product.template_suffix != 'request-quote' -%}
       {{ form | payment_button }}
     {%- endif -%}
   {%- else -%}
