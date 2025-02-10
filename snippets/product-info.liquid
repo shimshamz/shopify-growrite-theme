@@ -1,6 +1,31 @@
 {%- assign selected_variant = product.selected_or_first_available_variant -%}
 {%- assign product_form_id = 'product_form_' | append: section.id | append: product.id -%}
 
+{%- assign customer_price_tier = customer.metafields.growrite.price_tier | downcase -%}
+{%- assign discount_amount = false -%}
+
+{%- for metaobject in metaobjects.wholesale_pricing_tiers.values -%}
+  {%- if metaobject.system.handle == customer_price_tier -%}
+    <script>console.log({{ metaobject.system.handle | json }})</script>
+    {%- assign discount_amount = metaobject.amount | divided_by: 100.00 -%}
+    {%- break -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{% render 'grow-rite-b2b-auto-discount', customer_price_tier: customer_price_tier %}
+
+{%- if customer_price_tier and discount_amount -%}
+  {%- assign product_eligible_for_tier_discount = false -%}
+  {%- assign discount_amount = 1.00 | minus: discount_amount %}
+  {% for product_eligible_tier in product.metafields.growrite.include_price_tiers.value -%}
+    {%- assign product_eligible_tier_lowercase = product_eligible_tier | downcase -%}
+    {%- if product_eligible_tier_lowercase == customer_price_tier -%}
+      {%- assign product_eligible_for_tier_discount = true -%}
+      {%- break -%}
+    {%- endif -%}
+  {%- endfor %}
+{%- endif -%}
+
 <div class="card {% if product.media.size > 0 %}card--collapsed{% endif %} {% if template.name == 'product' %}card--sticky{% endif %}">
   {%- if section.settings.enable_image_zoom -%}
     <div id="product-zoom-{{ section.id }}" class="product__zoom-wrapper"></div>
@@ -14,7 +39,7 @@
             {%- render 'product-meta', product: product, block: block -%}
 
           {%- when 'variant_selector' -%}
-            {%- render 'product-variant-selector', product: product, form: form, block: block -%}
+            {%- render 'product-variant-selector', product: product, form: form, block: block, product_eligible_for_tier_discount: product_eligible_for_tier_discount, discount_amount: discount_amount -%}
 
           {%- when 'buy_buttons' -%}
             {%- render 'product-buy-buttons', product: product, form: form, block: block -%}
@@ -113,7 +138,21 @@
           "option2": {{ variant.option2 | json }},
           "option3": {{ variant.option3 | json }},
           "options": {{ variant.options | json }},
-          "price": {%- if variant.taxable -%}{{ variant.price | times: vat | round | json }}{%- else -%}{{ variant.price | json }}{% endif %},
+          "price": 
+            {%- if product_eligible_for_tier_discount -%}
+              {%- assign price_after_tier_discount = variant.price | times: discount_amount -%}
+              {%- if variant.taxable -%}
+                {{ price_after_tier_discount | times: vat | round | json }}
+              {%- else -%}
+                {{ price_after_tier_discount | json }}
+              {% endif %}
+            {%- else -%}
+              {%- if variant.taxable -%}
+                {{ variant.price | times: vat | round | json }}
+              {%- else -%}
+                {{ variant.price | json }}
+              {% endif %}
+            {% endif %},
           "public_title": {{ variant.public_title | json }},
           "requires_shipping": {{ variant.requires_shipping | json }},
           "sku": {{ variant.sku | json }},
@@ -136,9 +175,51 @@
         "vendor": {{ product.vendor | json }},
         "type": {{ product.type | json }},
         "tags": {{ product.tags | json }},
-        "price": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price | times: vat | round | json }}{%- else -%}{{ product.price | json }}{% endif %},
-        "price_min": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price_min | times: vat | round | json }}{%- else -%}{{ product.price_min | json }}{% endif %},
-        "price_max": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.price_max | times: vat | round | json }}{%- else -%}{{ product.price_max | json }}{% endif %},
+        "price": 
+          {%- if product_eligible_for_tier_discount -%}
+            {%- assign price_after_tier_discount = product.price | times: discount_amount -%}
+            {%- if product.selected_or_first_available_variant.taxable -%}
+              {{ price_after_tier_discount | times: vat | round | json }}
+            {%- else -%}
+              {{ price_after_tier_discount | json }}
+            {% endif %}
+          {%- else -%}
+            {%- if product.selected_or_first_available_variant.taxable -%}
+              {{ product.price | times: vat | round | json }}
+            {%- else -%}
+              {{ product.price | json }}
+            {% endif %}
+          {% endif %},
+        "price_min": 
+          {%- if product_eligible_for_tier_discount -%}
+            {%- assign price_after_tier_discount_min = product.price_min | times: discount_amount -%}
+            {%- if product.selected_or_first_available_variant.taxable -%}
+              {{ price_after_tier_discount_min | times: vat | round | json }}
+            {%- else -%}
+              {{ price_after_tier_discount_min | json }}
+            {% endif %}
+          {%- else -%}
+            {%- if product.selected_or_first_available_variant.taxable -%}
+              {{ product.price_min | times: vat | round | json }}
+            {%- else -%}
+              {{ product.price_min | json }}
+            {% endif %}
+          {% endif %},
+        "price_max": 
+          {%- if product_eligible_for_tier_discount -%}
+            {%- assign price_after_tier_discount_max = product.price_max | times: discount_amount -%}
+            {%- if product.selected_or_first_available_variant.taxable -%}
+              {{ price_after_tier_discount_max | times: vat | round | json }}
+            {%- else -%}
+              {{ price_after_tier_discount_max | json }}
+            {% endif %}
+          {%- else -%}
+            {%- if product.selected_or_first_available_variant.taxable -%}
+              {{ product.price_max | times: vat | round | json }}
+            {%- else -%}
+              {{ product.price_max | json }}
+            {% endif %}
+          {% endif %},
         "available": {{ product.available | json }},
         "price_varies": {{ product.price_varies | json }},
         "compare_at_price": {%- if product.selected_or_first_available_variant.taxable -%}{{ product.compare_at_price | times: vat | round | json }}{%- else -%}{{ product.compare_at_price | json }}{% endif %},

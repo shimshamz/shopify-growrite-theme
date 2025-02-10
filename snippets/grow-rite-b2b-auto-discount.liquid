@@ -1,0 +1,61 @@
+{%- if customer -%}
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const shopUrl = window.Shopify.routes.root;
+    const customerPriceTier = "{{ customer_price_tier }}";
+  
+    // Apply discount for customer if price tier assigned to customer
+    applyCustomerDiscount(shopUrl);
+  });
+  
+  // Define an async function to handle the requests
+  async function applyCustomerDiscount(shopUrl) {
+    try {
+      // First request: Get Cart data for cart ID/token
+      const cartJsUrl = shopUrl + 'cart.js';
+      const cartDataResponse = await fetch(cartJsUrl);
+  
+      // Check if /cart.js request was successful
+      if (!cartDataResponse.ok) {
+        throw new Error('Failed to fetch from /cart.js');
+      }
+  
+      // Parse the JSON response from the first request
+      const cartDataJson = await cartDataResponse.json();
+      console.log(cartDataJson)
+      // Assign cart token
+      const cartToken = cartDataJson.token;
+      const discountCode = "b2b-discount-{{ customer_price_tier }}";
+  
+      if (cartToken) {
+        // Use the data from the first request to make the second request
+        // Second request: POST token to Auto-Discount Shopify app api endpoint
+        const appUrl = shopUrl + `apps/auto-discount/api/cart?cartToken=${cartToken}&discountCode=${discountCode}`;
+        const appResponse = await fetch(appUrl, {
+          method: 'POST'
+        });
+  
+        // Check if the API request was successful
+        if (!appResponse.ok) {
+          throw new Error('Failed to POST to app');
+        }
+  
+        // Parse the JSON response from the API request
+        const discountApplied = await appResponse.json();
+  
+        // Log or return the second data
+        console.log(discountApplied);
+  
+        if (discountApplied) {
+          document.documentElement.dispatchEvent(new CustomEvent('cart:refresh', {
+            bubbles: true
+          }));
+        }
+      }
+    } catch (error) {
+      // Handle any errors that occurred in the process
+      console.error('Error during fetch:', error);
+    }
+  }
+  </script>
+{%- endif -%}
