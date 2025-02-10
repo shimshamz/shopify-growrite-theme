@@ -2,6 +2,18 @@
 {%- assign color_label = 'color,colour,couleur,cor,colore,farbe,색,色,カラー,färg,farve,szín,barva' | split: ',' -%}
 {%- assign vat = 1.15 %}
 
+{%- if customer_price_tier and discount_amount -%}
+  {%- assign product_eligible_for_tier_discount = false -%}
+  {%- assign discount_amount = 1.00 | minus: discount_amount %}
+  {% for product_eligible_tier in product.metafields.growrite.include_price_tiers.value -%}
+    {%- assign product_eligible_tier_lowercase = product_eligible_tier | downcase -%}
+    {%- if product_eligible_tier_lowercase == customer_price_tier -%}
+      {%- assign product_eligible_for_tier_discount = true -%}
+      {%- break -%}
+    {%- endif -%}
+  {%- endfor %}
+{%- endif -%}
+
 {%- unless product.has_only_default_variant -%}
   <div class="product-form__variants" {{ block.shopify_attributes }}>
     {%- for option in product.options_with_values -%}
@@ -147,36 +159,47 @@
 
     <div class="product-form__info-content" role="region" aria-live="polite">
       <div class="price-list">
-        {%- if selected_variant.compare_at_price > selected_variant.price -%}
-          <span class="price price--highlight">
-            <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
-
+        {%- if selected_variant and product_eligible_for_tier_discount -%}
+          {%- assign price_after_tier_discount = selected_variant.price | times: discount_amount -%}
+          <span class="price">
             {%- if settings.currency_code_enabled -%}
-              {{- selected_variant.price | times: vat | money_with_currency -}}
+              {%- if selected_variant.taxable -%}{{ price_after_tier_discount | times: vat | money_with_currency }}{%- else -%}{{ price_after_tier_discount | money_with_currency }}{% endif %}
             {%- else -%}
-              {{- selected_variant.price | times: vat | money -}}
-            {%- endif -%}
-          </span>
-
-          <span class="price price--compare">
-            <span class="visually-hidden">{{ 'product.general.regular_price' | t }}</span>
-
-            {%- if settings.currency_code_enabled -%}
-              {%- if selected_variant.taxable -%}{{ selected_variant.compare_at_price | times: vat | money_with_currency }}{%- else -%}{{ selected_variant.compare_at_price | money_with_currency }}{% endif %}
-            {%- else -%}
-              {%- if selected_variant.taxable -%}{{ selected_variant.compare_at_price | times: vat | money }}{%- else -%}{{ selected_variant.compare_at_price | money }}{% endif %}
+              {%- if selected_variant.taxable -%}{{ price_after_tier_discount | times: vat | money }}{%- else -%}{{ price_after_tier_discount | money }}{% endif %}
             {%- endif -%}
           </span>
         {%- else -%}
-          <span class="price">
-            <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
-
-            {%- if settings.currency_code_enabled -%}
-              {%- if selected_variant.taxable -%}{{ selected_variant.price | times: vat | money_with_currency }}{%- else -%}{{ selected_variant.price | money_with_currency }}{% endif %}
-            {%- else -%}
-              {%- if selected_variant.taxable -%}{{ selected_variant.price | times: vat | money }}{%- else -%}{{ selected_variant.price | money }}{% endif %}
-            {%- endif -%}
-          </span>
+          {%- if selected_variant.compare_at_price > selected_variant.price -%}
+            <span class="price price--highlight">
+              <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
+  
+              {%- if settings.currency_code_enabled -%}
+                {{- selected_variant.price | times: vat | money_with_currency -}}
+              {%- else -%}
+                {{- selected_variant.price | times: vat | money -}}
+              {%- endif -%}
+            </span>
+  
+            <span class="price price--compare">
+              <span class="visually-hidden">{{ 'product.general.regular_price' | t }}</span>
+  
+              {%- if settings.currency_code_enabled -%}
+                {%- if selected_variant.taxable -%}{{ selected_variant.compare_at_price | times: vat | money_with_currency }}{%- else -%}{{ selected_variant.compare_at_price | money_with_currency }}{% endif %}
+              {%- else -%}
+                {%- if selected_variant.taxable -%}{{ selected_variant.compare_at_price | times: vat | money }}{%- else -%}{{ selected_variant.compare_at_price | money }}{% endif %}
+              {%- endif -%}
+            </span>
+          {%- else -%}
+            <span class="price">
+              <span class="visually-hidden">{{ 'product.general.sale_price' | t }}</span>
+  
+              {%- if settings.currency_code_enabled -%}
+                {%- if selected_variant.taxable -%}{{ selected_variant.price | times: vat | money_with_currency }}{%- else -%}{{ selected_variant.price | money_with_currency }}{% endif %}
+              {%- else -%}
+                {%- if selected_variant.taxable -%}{{ selected_variant.price | times: vat | money }}{%- else -%}{{ selected_variant.price | money }}{% endif %}
+              {%- endif -%}
+            </span>
+          {%- endif -%}
         {%- endif -%}
       </div>
 
