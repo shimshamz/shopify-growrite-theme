@@ -40,10 +40,11 @@
 }
 {%- endcapture -%}
 
-{%- assign customer_price_tier = customer.metafields.growrite.price_tier | downcase -%}
+{% comment %} START - Auto-Discount logic {% endcomment %}
+{%- assign customer_price_tier = customer.metafields.growrite.price_tier | downcase | replace: " ", "-" -%}
 {%- assign discount_amount = false -%}
 
-{%- for metaobject in metaobjects.wholesale_pricing_tiers.values -%}
+{%- for metaobject in metaobjects.price_tier_discounts.values -%}
   {%- if metaobject.system.handle == customer_price_tier -%}
     <script>console.log({{ metaobject.system.handle | json }})</script>
     {%- assign discount_amount = metaobject.amount | divided_by: 100.00 -%}
@@ -51,7 +52,8 @@
   {%- endif -%}
 {%- endfor -%}
 
-{% render 'grow-rite-b2b-auto-discount', customer_price_tier: customer_price_tier %}
+{%- render 'grow-rite-b2b-auto-discount', customer_price_tier: customer_price_tier -%}
+{% comment %} END - Auto-Discount logic {% endcomment %}
 
 <section data-section-id="{{ section.id }}" data-section-type="collection" data-section-settings='{{ section_settings }}'>
   <div class="container container--flush">

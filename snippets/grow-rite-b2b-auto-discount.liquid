@@ -1,19 +1,25 @@
-{%- if customer -%}
+{%- if customer.email == 'shameelmohanlal@gmail.com' -%}
   <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     const shopUrl = window.Shopify.routes.root;
     const customerPriceTier = "{{ customer_price_tier }}";
-  
-    // Apply discount for customer if price tier assigned to customer
-    applyCustomerDiscount(shopUrl);
+
+    const response = await applyCustomerDiscount(shopUrl, customerPriceTier);
+    console.log(response);
+    if (response.discountApplied) {
+      document.documentElement.dispatchEvent(new CustomEvent('cart:refresh', {
+        bubbles: true
+      }));
+    }
   });
   
   // Define an async function to handle the requests
-  async function applyCustomerDiscount(shopUrl) {
+  async function applyCustomerDiscount(shopUrl, customerPriceTier) {
     try {
       // First request: Get Cart data for cart ID/token
       const cartJsUrl = shopUrl + 'cart.js';
       const cartDataResponse = await fetch(cartJsUrl);
+      let cartId;
   
       // Check if /cart.js request was successful
       if (!cartDataResponse.ok) {
@@ -25,36 +31,154 @@
       console.log(cartDataJson)
       // Assign cart token
       const cartToken = cartDataJson.token;
-      const discountCode = "b2b-discount-{{ customer_price_tier }}";
-  
+      const targetDiscountCode = customerPriceTier ? `b2b-discount-${customerPriceTier}` : '';
+
+      // Check that the cart token exists
       if (cartToken) {
-        // Use the data from the first request to make the second request
-        // Second request: POST token to Auto-Discount Shopify app api endpoint
-        const appUrl = shopUrl + `apps/auto-discount/api/cart?cartToken=${cartToken}&discountCode=${discountCode}`;
-        const appResponse = await fetch(appUrl, {
-          method: 'POST'
-        });
-  
-        // Check if the API request was successful
-        if (!appResponse.ok) {
-          throw new Error('Failed to POST to app');
+        cartId = `gid://shopify/Cart/${cartToken}`;
+        const cartGQLQuery = `
+          query cart($cartId: ID!) {
+            cart(
+              id: $cartId
+            ) {
+              id
+              createdAt
+              updatedAt
+              lines(first: 10) {
+                  edges {
+                      node {
+                          id
+                          quantity
+                          merchandise {
+                              ... on ProductVariant {
+                              id
+                              }
+                          }
+                          attributes {
+                              key
+                              value
+                          }
+                      }
+                  }
+              }
+              discountCodes {
+                  code
+              }
+            }
+          }
+        `;
+        const cartGQLVariables = { cartId };
+        const cartGQLResponse = await makeGraphQLRequest(cartGQLQuery, cartGQLVariables);
+        const cart = cartGQLResponse.data.cart;
+
+        if (!cart) return {
+          discountApplied: false,
+          message: "Cart not present."
         }
-  
-        // Parse the JSON response from the API request
-        const discountApplied = await appResponse.json();
-  
-        // Log or return the second data
-        console.log(discountApplied);
-  
-        if (discountApplied) {
-          document.documentElement.dispatchEvent(new CustomEvent('cart:refresh', {
-            bubbles: true
-          }));
+          
+        let discountApplied, message, data = null;
+        const discountCodesArr = cart.discountCodes.map(item => item.code);
+        // Check if the discount codes array does not include the passed in target discount code
+        if (!discountCodesArr.includes(targetDiscountCode)) {
+          const cartDiscountGQLQuery = `
+            mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]) {
+              cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
+                cart {
+                  id
+                  lines(first: 10) {
+                      edges {
+                          node {
+                          id
+                          quantity
+                          merchandise {
+                              ... on ProductVariant {
+                              id
+                              }
+                          }
+                          attributes {
+                              key
+                              value
+                          }
+                          }
+                      }
+                  }
+                  discountCodes {
+                      code
+                  }
+                }
+                userErrors {
+                    field
+                    message
+                }
+                warnings {
+                    code
+                    message
+                    target
+                }
+              }
+            }
+          `;
+          const cartDiscountGQLVariables = { 
+            cartId,
+            discountCodes: [targetDiscountCode]
+          };
+          // Make request to apply the discount code to the cart
+          const cartDiscountGQLResponse = await makeGraphQLRequest(cartDiscountGQLQuery, cartDiscountGQLVariables);
+
+          // Check that there are no errors in the discount code update response
+          if (cartDiscountGQLResponse.data.cartDiscountCodesUpdate.userErrors.length === 0) {
+            discountApplied = true;
+            message = "Discount code applied successfully.";
+            data = { cartDiscountGQLResponse };
+          } else {
+              discountApplied = false;
+              message = "Error while attempting to apply discount code.";
+          }
+        } else {
+          discountApplied = false;
+          message = "Discount code has already been applied to cart.";
         }
+
+        return {
+          discountApplied,
+          message,
+          data
+        };
       }
     } catch (error) {
       // Handle any errors that occurred in the process
       console.error('Error during fetch:', error);
+    }
+  }
+
+  async function makeGraphQLRequest(query, variables = null, storefrontAccessToken = "98363839970c7a48d7c22a8a0ba31ff8") {
+    try {
+      const url = "https://growrite-new.myshopify.com/api/2025-01/graphql.json";
+      const graphQLResponse = await fetch(url, {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Storefront-Access-Token": storefrontAccessToken
+        },
+        body: JSON.stringify({
+          query,
+          variables
+        })
+      });
+  
+      // Check if the API request was successful
+      if (!graphQLResponse.ok) {
+        throw new Error('Failed to POST to GraphQL endpoint');
+      }
+
+      // Parse the JSON response from the API request
+      const graphQLResponseJson = await graphQLResponse.json();
+      // Log or return data
+      return graphQLResponseJson;
+    } catch (error) {
+      // Handle any errors that occurred in the process
+      console.error('Error during fetch:', error);
+      return 'Error, check console';
     }
   }
   </script>

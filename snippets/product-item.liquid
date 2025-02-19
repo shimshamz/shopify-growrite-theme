@@ -2,17 +2,19 @@
 {%- assign color_label = 'color,colour,couleur,cor,colore,farbe,색,色,カラー,färg,farve,szín,barva' | split: ',' -%}
 {%- assign vat = 1.15 %}
 
+{% comment %} START - Auto-Discount logic {% endcomment %}
 {%- if customer_price_tier and discount_amount -%}
   {%- assign product_eligible_for_tier_discount = false -%}
   {%- assign discount_amount = 1.00 | minus: discount_amount %}
   {% for product_eligible_tier in product.metafields.growrite.include_price_tiers.value -%}
-    {%- assign product_eligible_tier_lowercase = product_eligible_tier | downcase -%}
+    {%- assign product_eligible_tier_lowercase = product_eligible_tier | downcase | replace: " ", "-" -%}
     {%- if product_eligible_tier_lowercase == customer_price_tier -%}
       {%- assign product_eligible_for_tier_discount = true -%}
       {%- break -%}
     {%- endif -%}
   {%- endfor %}
 {%- endif -%}
+{% comment %} END - Auto-Discount logic {% endcomment %}
 
 <div class="product-item {% if horizontal %}product-item--horizontal{% elsif list %}product-item--list{% else %}product-item--vertical{% endif %} {% if complementary_products %}product-item--complementary{% endif %} {% if section.id == 'blog-sidebar' %}product-item--compact{% endif %} {{ grid_classes }}">
   {%- capture product_labels -%}
@@ -109,8 +111,8 @@
   <div class="product-item__info">
     <div class="product-item__info-inner">
       {%- capture price_list -%}
-        {%- comment -%} if no variants available, don't display price {%- endcomment -%}
-        {%- if product.available -%}
+        {%- comment -%} if no variants available or template is 'request-quote', don't display price {%- endcomment -%}
+        {%- if product.available and product.template_suffix != 'request-quote' -%}
           <div class="product-item__price-list price-list">
             {%- if product_eligible_for_tier_discount -%}
               {%- if product.price_varies -%}

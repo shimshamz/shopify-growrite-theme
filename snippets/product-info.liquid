@@ -1,10 +1,11 @@
 {%- assign selected_variant = product.selected_or_first_available_variant -%}
 {%- assign product_form_id = 'product_form_' | append: section.id | append: product.id -%}
 
-{%- assign customer_price_tier = customer.metafields.growrite.price_tier | downcase -%}
+{% comment %} START - Auto-Discount logic {% endcomment %}
+{%- assign customer_price_tier = customer.metafields.growrite.price_tier | downcase | replace: " ", "-" -%}
 {%- assign discount_amount = false -%}
 
-{%- for metaobject in metaobjects.wholesale_pricing_tiers.values -%}
+{%- for metaobject in metaobjects.price_tier_discounts.values -%}
   {%- if metaobject.system.handle == customer_price_tier -%}
     <script>console.log({{ metaobject.system.handle | json }})</script>
     {%- assign discount_amount = metaobject.amount | divided_by: 100.00 -%}
@@ -12,19 +13,20 @@
   {%- endif -%}
 {%- endfor -%}
 
-{% render 'grow-rite-b2b-auto-discount', customer_price_tier: customer_price_tier %}
+{%- render 'grow-rite-b2b-auto-discount', customer_price_tier: customer_price_tier -%}
 
 {%- if customer_price_tier and discount_amount -%}
   {%- assign product_eligible_for_tier_discount = false -%}
   {%- assign discount_amount = 1.00 | minus: discount_amount %}
   {% for product_eligible_tier in product.metafields.growrite.include_price_tiers.value -%}
-    {%- assign product_eligible_tier_lowercase = product_eligible_tier | downcase -%}
+    {%- assign product_eligible_tier_lowercase = product_eligible_tier | downcase | replace: " ", "-" -%}
     {%- if product_eligible_tier_lowercase == customer_price_tier -%}
       {%- assign product_eligible_for_tier_discount = true -%}
       {%- break -%}
     {%- endif -%}
   {%- endfor %}
 {%- endif -%}
+{% comment %} END - Auto-Discount logic {% endcomment %}
 
 <div class="card {% if product.media.size > 0 %}card--collapsed{% endif %} {% if template.name == 'product' %}card--sticky{% endif %}">
   {%- if section.settings.enable_image_zoom -%}
